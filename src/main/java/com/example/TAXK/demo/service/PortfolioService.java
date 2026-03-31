@@ -38,10 +38,6 @@ public class PortfolioService {
             return false;
         }
 
-        Optional<String> companyName = stockPriceService.getCompanyName(ticker);
-        if(companyName.isEmpty()){
-            return false;
-        }
 
         // Step 1: 查价
         Optional<Double> currentPriceExist = stockPriceService.getStockPrice(ticker);
@@ -62,13 +58,17 @@ public class PortfolioService {
             double newQty = oldQty + quantity;
             double newAvgCost = (oldQty * oldAvgCost + quantity * currentPrice) / newQty;
 
-            holding.setCompany_name(companyName.get());
             holding.setQuantity((int) newQty);
             holding.setAverage_cost(newAvgCost);
             holding.setUpdated_at(LocalDateTime.now());
             holdingRepo.save(holding);
         } else {
             // Step 3b: 不存在
+            Optional<String> companyName = stockPriceService.getCompanyName(ticker);
+            if(companyName.isEmpty()){
+                return false;
+            }
+
             Holding newHolding = new Holding();
             newHolding.setTicker(ticker);
             newHolding.setQuantity(quantity);
@@ -94,5 +94,59 @@ public class PortfolioService {
         transactionRepo.save(tx);
         return true;
     }
+
+    @Transactional
+    public boolean sell(String ticker, int quantity, String note) {
+
+        // Step 0: 查库，没有持仓直接拒绝
+        Optional<Holding> existing = holdingRepo.findByTicker(ticker);
+        if (existing.isEmpty()) {
+            return false;
+        }
+
+        Holding holding = existing.get();
+        int oldQty = holding.getQuantity();
+
+        // Step 1: 校验数量，卖出不能超过持有
+        if (quantity > oldQty) {
+            return false;
+        }
+
+        // Step 2: 查实时价格
+        Optional<Double> currentPriceExist = stockPriceService.getStockPrice(ticker);
+        if (currentPriceExist.isEmpty()) {
+            return false;
+        }
+        double currentPrice = currentPriceExist.get();
+
+        // Step 3: 更新 holding
+        if (quantity == oldQty) {
+            // 全部卖出 → 删除持仓记录
+            holdingRepo.delete(holding);
+        } else {
+            // 部分卖出 → 减少数量，均价不变
+            holding.setQuantity(oldQty - quantity);
+            holding.setUpdated_at(LocalDateTime.now());
+            holdingRepo.save(holding);
+        }
+
+        // Step 4: 计算已实现盈亏 = (卖出价 - 均价) × 数量
+        double realizedPnl = (currentPrice - holding.getAverage_cost()) * quantity;
+
+        // Step 5: 记录交易
+        Transaction tx = new Transaction();
+        tx.setTicker(ticker);
+        tx.setNotes(note);
+        tx.setType(Transaction.TransactionType.SELL);
+        tx.setQuantity(quantity);
+        tx.setPrice(currentPrice);
+        tx.setTotalAmount(quantity * currentPrice);
+        tx.setRealizedPnl(realizedPnl);
+        tx.setTradeDate(LocalDate.now());
+        tx.setCreatedAt(LocalDateTime.now());
+        transactionRepo.save(tx);
+        return true;
+    }
+
 
 }
