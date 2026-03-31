@@ -34,9 +34,34 @@ public class StockPriceService {
     }
 
     // Get historical price of one single stock
-    public List<HistoricalQuote> getHistoricalPrice(String ticker, LocalDate nowDate, Interval interval) {
-        //TODO
-        return new LinkedList<HistoricalQuote>();
+    public List<HistoricalQuote> getHistoricalPrice(String ticker, LocalDate startDate, Interval interval) {
+         try {
+             Calendar toCal = Calendar.getInstance(); //today
+             Calendar fromCal = Calendar.getInstance();
+             fromCal.set(startDate.getYear(), startDate.getMonthValue() - 1, startDate.getDayOfMonth());
+             Stock stock = YahooFinance.get(ticker, fromCal, toCal, interval);
+             return stock.getHistory();
+         } catch(IOException e) {
+             return Collections.emptyList();
+         }
+    }
+
+    // Get historical price of all stocks
+    public Map<String, List<HistoricalQuote>> getAllHistoricalPrices(List<String> tickers, LocalDate startDate, Interval interval) {
+        Map<String, List<HistoricalQuote>> results = new HashMap<>();
+        Calendar toCal = Calendar.getInstance(); //today
+        Calendar fromCal = Calendar.getInstance();
+        fromCal.set(startDate.getYear(), startDate.getMonthValue() - 1, startDate.getDayOfMonth());
+        for(String ticker: tickers) {
+            try {
+                Stock stock = YahooFinance.get(ticker, fromCal, toCal, interval);
+                List<HistoricalQuote> history = stock.getHistory();
+                results.put(ticker, history);
+            } catch(IOException e) {
+                results.put(ticker, Collections.emptyList());
+            }
+        }
+        return results;
     }
 
     // Validate if this ticket exists and return the stock information
