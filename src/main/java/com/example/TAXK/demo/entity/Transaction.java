@@ -2,21 +2,25 @@ package com.example.TAXK.demo.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+
+import jakarta.persistence.*;
 
 @Entity
 public class Transaction {
+
+    public enum TransactionType {
+        BUY, SELL
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 10)
     private String ticker;
 
-    private String type;
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
 
     private Integer quantity;
 
@@ -35,7 +39,7 @@ public class Transaction {
     public Transaction() {
     }
 
-    public Transaction(Long id, String ticker, String type, Integer quantity, double price, double totalAmount, double realizedPnl, LocalDate tradeDate, String notes, LocalDateTime createdAt) {
+    public Transaction(Long id, String ticker, TransactionType type, Integer quantity, double price, double totalAmount, double realizedPnl, LocalDate tradeDate, String notes, LocalDateTime createdAt) {
         this.id = id;
         this.ticker = ticker;
         this.type = type;
@@ -64,11 +68,11 @@ public class Transaction {
         this.ticker = ticker;
     }
 
-    public String getType() {
+    public TransactionType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(TransactionType type) {
         this.type = type;
     }
 
