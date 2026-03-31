@@ -5,7 +5,6 @@ import com.example.TAXK.demo.entity.Transaction;
 import com.example.TAXK.demo.repo.HoldingRepo;
 import com.example.TAXK.demo.repo.TransactionRepo;
 import org.springframework.stereotype.Service;
-import yahoofinance.Stock;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,7 +27,7 @@ public class PortfolioService {
 
     // buy
 
-    public void buy(String ticker, int quantity) {
+    public void buy(String ticker, int quantity, String note) {
         // Step 1: 查价
         Map<String, Double> stocks = stockPriceService.getAllStocks(List.of(ticker));
         double currentPrice = stocks.get(ticker.toUpperCase());
@@ -67,6 +66,7 @@ public class PortfolioService {
         // Step 4: 跟新交易表
         Transaction tx = new Transaction();
         tx.setTicker(ticker);
+        tx.setNotes(note);
         tx.setType(Transaction.TransactionType.BUY);
         tx.setQuantity(quantity);
         tx.setPrice(currentPrice);
