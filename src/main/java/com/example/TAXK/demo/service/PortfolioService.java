@@ -5,6 +5,7 @@ import com.example.TAXK.demo.entity.Transaction;
 import com.example.TAXK.demo.repo.HoldingRepo;
 import com.example.TAXK.demo.repo.TransactionRepo;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
