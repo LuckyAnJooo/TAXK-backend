@@ -60,9 +60,9 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.yahoofinance-api</groupId>
-            <artifactId>YahooFinanceAPI</artifactId>
-            <version>3.17.0</version>
+            <groupId>com.github.oscerd</groupId>
+            <artifactId>finnhub-java-client</artifactId>
+            <version>0.3.0</version>
         </dependency>
     </dependencies>
 

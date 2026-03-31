@@ -1,61 +1,102 @@
 package com.example.TAXK.demo.service;
 
-import yahoofinance.Stock;
-import yahoofinance.YahooFinance;
-import yahoofinance.histquotes.HistoricalQuote;
-import yahoofinance.histquotes.Interval;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.Map;
 
 @Service
 public class StockPriceService {
-    // get the price of a stock
+
+    @Value("${finnhub.api.key}")
+    private String apiKey;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    // Get the price of a stock
     public Optional<Double> getStockPrice(String ticker) {
-        Optional<Map<String, Object>> result = validate(ticker);
-        if(result.isPresent()) {
-            Map<String, Object> data = result.get();
-            return Optional.of((double) data.get("currentPrice"));
+        String url = String.format("https://finnhub.io/api/v1/quote?symbol=%s&token=%s", ticker, apiKey);
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            if (response != null && response.get("c") != null) {
+                return Optional.of(Double.valueOf(response.get("c").toString())); // "c" = current price
+            }
+        } catch (Exception e) {
+            return Optional.empty();
         }
         return Optional.empty();
     }
+
     // Get the prices of multiple stocks
-    public Map<String, Stock> getAllStocks(List<String> tickers) {
-        try {
-            String arr[] = tickers.toArray(new String[0]);
-            Map<String, Stock> results = YahooFinance.get(arr);
-            return results;
-        } catch (IOException e){
-            return Collections.emptyMap();
+    public Map<String, Double> getAllStocks(List<String> tickers) {
+        Map<String, Double> results = new HashMap<>();
+        for (String ticker : tickers) {
+            Optional<Double> price = getStockPrice(ticker);
+            results.put(ticker, price.orElse(null));
         }
+        return results;
     }
 
     // Get historical price of one single stock
-    public List<HistoricalQuote> getHistoricalPrice(String ticker, LocalDate nowDate, Interval interval) {
-        //TODO
-        return new LinkedList<HistoricalQuote>();
+    public List<Map<String, Object>> getHistoricalPrice(String ticker, LocalDate startDate, String resolution) {
+        // resolution can be "1", "5", "15", "30", "60", "D", "W", "M"
+        long from = startDate.atStartOfDay().toEpochSecond(java.time.ZoneOffset.UTC);
+        long to = LocalDate.now().atStartOfDay().toEpochSecond(java.time.ZoneOffset.UTC);
+
+        String url = String.format(
+                "https://finnhub.io/api/v1/stock/candle?symbol=%s&resolution=%s&from=%d&to=%d&token=%s",
+                ticker, resolution, from, to, apiKey
+        );
+
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            if (response != null && "ok".equals(response.get("s"))) {
+                List<Map<String, Object>> history = new ArrayList<>();
+                List<Long> timestamps = (List<Long>) response.get("t");
+                List<Double> closes = (List<Double>) response.get("c");
+                for (int i = 0; i < timestamps.size(); i++) {
+                    Map<String, Object> record = new HashMap<>();
+                    record.put("time", timestamps.get(i));
+                    record.put("close", closes.get(i));
+                    history.add(record);
+                }
+                return history;
+            }
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+        return Collections.emptyList();
     }
 
-    // Validate if this ticket exists and return the stock information
-    public Optional<Map<String, Object>> validate(String ticker) {
-         try {
-             Stock stock = YahooFinance.get(ticker.toUpperCase());
-             if(stock == null || stock.getQuote().getPrice() == null) {
-                 //doesn't exist
-                 return Optional.empty();
-             }
-             Map<String, Object> result = new HashMap<String, Object>();
-             result.put("ticker", stock.getSymbol());
-             result.put("name", stock.getName());
-             result.put("exchange", stock.getStockExchange());
-             result.put("currentPrice", stock.getQuote().getPrice());
-             result.put("currency", stock.getCurrency());
-             return Optional.of(result);
-         } catch(IOException e) {
-             return Optional.empty();
+    // Get historical price of all stocks
+    public Map<String, List<Map<String, Object>>> getAllHistoricalPrices(List<String> tickers, LocalDate startDate, String resolution) {
+        Map<String, List<Map<String, Object>>> results = new HashMap<>();
+        for (String ticker : tickers) {
+            results.put(ticker, getHistoricalPrice(ticker, startDate, resolution));
         }
+        return results;
+    }
+
+    // Validate if this ticker exists and return the stock information
+    public Optional<Map<String, Object>> validate(String ticker) {
+        String url = String.format("https://finnhub.io/api/v1/quote?symbol=%s&token=%s", ticker, apiKey);
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            if (response != null && response.get("c") != null) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("ticker", ticker.toUpperCase());
+                result.put("currentPrice", response.get("c"));
+                result.put("high", response.get("h"));
+                result.put("low", response.get("l"));
+                result.put("open", response.get("o"));
+                result.put("previousClose", response.get("pc"));
+                return Optional.of(result);
+            }
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+        return Optional.empty();
     }
 }
