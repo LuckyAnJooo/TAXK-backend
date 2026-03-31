@@ -99,4 +99,30 @@ public class StockPriceService {
         }
         return Optional.empty();
     }
+
+    // Get the company name of a single stock
+    public Optional<String> getCompanyName(String ticker) {
+        String url = String.format("https://finnhub.io/api/v1/stock/profile2?symbol=%s&token=%s", ticker, apiKey);
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            if (response != null && response.get("name") != null) {
+                return Optional.of(response.get("name").toString());
+            }
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+        return Optional.empty();
+    }
+
+    // Get the company names of multiple stocks
+    public Map<String, String> getAllCompanyNames(List<String> tickers) {
+        Map<String, String> results = new HashMap<>();
+        for (String ticker : tickers) {
+            Optional<String> name = getCompanyName(ticker);
+            results.put(ticker, name.orElse(null));
+        }
+        return results;
+    }
+
+
 }
