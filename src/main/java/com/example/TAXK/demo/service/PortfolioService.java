@@ -4,6 +4,7 @@ import com.example.TAXK.demo.entity.Holding;
 import com.example.TAXK.demo.entity.Transaction;
 import com.example.TAXK.demo.repo.HoldingRepo;
 import com.example.TAXK.demo.repo.TransactionRepo;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,11 +28,25 @@ public class PortfolioService {
 
     // buy
 
-    public void buy(String ticker, int quantity, String note) {
-        // Step 1: 查价
-        Map<String, Double> stocks = stockPriceService.getAllStocks(List.of(ticker));
-        double currentPrice = stocks.get(ticker.toUpperCase());
+    @Transactional
+    public boolean buy(String ticker, int quantity, String note) {
 
+        // Step 0: 校验
+        Optional<Map<String, Object>> stock = stockPriceService.validate(ticker);
+
+        if(stock.isEmpty()){
+            return false;
+        }
+
+        Optional<String> companyName = stockPriceService.getCompanyName(ticker);
+        if(companyName.isEmpty()){
+            return false;
+        }
+
+        // Step 1: 查价
+        Optional<Double> currentPriceExist = stockPriceService.getStockPrice(ticker);
+
+        double currentPrice = currentPriceExist.get();
         // Step 2: 查库
         Optional<Holding> existing = holdingRepo.findByTicker(ticker);
 
@@ -47,6 +62,7 @@ public class PortfolioService {
             double newQty = oldQty + quantity;
             double newAvgCost = (oldQty * oldAvgCost + quantity * currentPrice) / newQty;
 
+            holding.setCompany_name(companyName.get());
             holding.setQuantity((int) newQty);
             holding.setAverage_cost(newAvgCost);
             holding.setUpdated_at(LocalDateTime.now());
@@ -60,6 +76,7 @@ public class PortfolioService {
             newHolding.setFirst_buy_date(LocalDate.now());
             newHolding.setCreated_at(LocalDateTime.now());
             newHolding.setUpdated_at(LocalDateTime.now());
+            newHolding.setCompany_name(companyName.get());
             holdingRepo.save(newHolding);
         }
 
@@ -75,6 +92,7 @@ public class PortfolioService {
         tx.setTradeDate(LocalDate.now());
         tx.setCreatedAt(LocalDateTime.now());
         transactionRepo.save(tx);
+        return true;
     }
 
 }
