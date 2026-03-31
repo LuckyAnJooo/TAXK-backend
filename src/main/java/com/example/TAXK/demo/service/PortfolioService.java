@@ -95,6 +95,7 @@ public class PortfolioService {
         return true;
     }
 
+    // sell
     @Transactional
     public boolean sell(String ticker, int quantity, String note) {
 
