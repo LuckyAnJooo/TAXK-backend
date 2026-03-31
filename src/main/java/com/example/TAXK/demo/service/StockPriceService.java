@@ -30,11 +30,10 @@ public class StockPriceService {
     }
 
     // Get the prices of multiple stocks
-    public Map<String, Double> getAllStocks(List<String> tickers) {
-        Map<String, Double> results = new HashMap<>();
+    public Map<String, Optional<Double>> getAllStocks(List<String> tickers) {
+        Map<String, Optional<Double>> results = new HashMap<>();
         for (String ticker : tickers) {
-            Optional<Double> price = getStockPrice(ticker);
-            results.put(ticker, price.orElse(null));
+            results.put(ticker, getStockPrice(ticker));
         }
         return results;
     }
@@ -115,11 +114,10 @@ public class StockPriceService {
     }
 
     // Get the company names of multiple stocks
-    public Map<String, String> getAllCompanyNames(List<String> tickers) {
-        Map<String, String> results = new HashMap<>();
+    public Map<String, Optional<String>> getAllCompanyNames(List<String> tickers) {
+        Map<String, Optional<String>> results = new HashMap<>();
         for (String ticker : tickers) {
-            Optional<String> name = getCompanyName(ticker);
-            results.put(ticker, name.orElse(null));
+            results.put(ticker, getCompanyName(ticker));
         }
         return results;
     }
