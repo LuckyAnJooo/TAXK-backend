@@ -1,15 +1,10 @@
 package com.example.TAXK.demo.controller;
 
-import com.example.TAXK.demo.entity.Holding;
-import com.example.TAXK.demo.repo.HoldingRepo;
 import com.example.TAXK.demo.service.PortfolioService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.TAXK.demo.dto.BuyRequest; // 导入DTO类
-
-import java.util.List;
+import com.example.TAXK.demo.dto.TransactionRequest; // 导入DTO类
 
 
 @RestController
@@ -30,9 +25,9 @@ public class HoldingController {
 //    }
 
     @PostMapping("/api/portfolio")
-    public ResponseEntity<Void> addHolding(@RequestBody BuyRequest buyRequest){
-        portfolioService.buy(buyRequest.getTicker(), buyRequest.getQuantity());
-        System.out.println(buyRequest.getTicker() + " " + buyRequest.getQuantity());
+    public ResponseEntity<Void> addHolding(@RequestBody TransactionRequest transactionRequest){
+        portfolioService.buy(transactionRequest.getTicker(), transactionRequest.getQuantity(), transactionRequest.getNote());
+        System.out.println(transactionRequest.getTicker() + " " + transactionRequest.getQuantity());
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
 
