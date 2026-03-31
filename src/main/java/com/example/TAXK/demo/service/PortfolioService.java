@@ -15,8 +15,13 @@ import java.util.Optional;
 
 @Service
 public class PortfolioService {
+    @Autowired
     public final TransactionRepo transactionRepo;
+
+    @Autowired
     public final HoldingRepo holdingRepo;
+
+    @Autowired
     public final StockPriceService stockPriceService;
 
     public PortfolioService(TransactionRepo transactionRepo, HoldingRepo holdingRepo, StockPriceService stockPriceService) {
