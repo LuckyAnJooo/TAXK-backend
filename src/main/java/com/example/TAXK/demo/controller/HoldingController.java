@@ -24,7 +24,7 @@ public class HoldingController {
 //        return ResponseEntity.status(HttpStatus.OK).body(holds);  // 正确返回数据
 //    }
 
-    @PostMapping("/api/portfolio/buy")
+    @PostMapping("/api/portfolio")
     public ResponseEntity<Void> addHolding(@RequestBody TransactionRequest transactionRequest){
         portfolioService.buy(transactionRequest.getTicker(), transactionRequest.getQuantity(), transactionRequest.getNote());
         System.out.println(transactionRequest.getTicker() + " " + transactionRequest.getQuantity());
