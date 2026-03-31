@@ -30,8 +30,8 @@ public class PortfolioService {
 
     public void buy(String ticker, int quantity) {
         // Step 1: 查价
-        Map<String, Stock> stocks = stockPriceService.getAllStocks(List.of(ticker));
-        double currentPrice = stocks.get(ticker).getQuote().getPrice().doubleValue();
+        Map<String, Double> stocks = stockPriceService.getAllStocks(List.of(ticker));
+        double currentPrice = stocks.get(ticker.toUpperCase());
 
         // Step 2: 查库
         Optional<Holding> existing = holdingRepo.findByTicker(ticker);
