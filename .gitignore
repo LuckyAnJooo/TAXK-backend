@@ -35,3 +35,5 @@ build/
 
 ### mac ###
 *.Ds_Store
+
+.env.properties
