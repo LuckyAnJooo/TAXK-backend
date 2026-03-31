@@ -20,9 +20,10 @@ public class HoldingController {
     @Autowired
     private HoldingRepo holds;
 
-    @GetMapping("get/holdind")
+    @GetMapping("/holding")
     public ResponseEntity<List<Holding>> getHolding(){
-        System.out.println("get holding");
+
+
         return null;
     }
 
