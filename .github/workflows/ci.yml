@@ -32,6 +32,20 @@ jobs:
     - name: Build with Maven
       run: mvn clean install -DskipTests
 
+    - name: Start backend (in background)
+      run: mvn spring-boot:run &
+
+    - name: Wait for backend to start
+      run: sleep 15
+
+    - name: Download Apifox CLI
+      run: |
+        curl -fsSL https://cli.apifox.com/download/latest/linux_x64 -o apifox-cli
+        chmod +x apifox-cli
+
+    - name: Run API Fox tests
+      run: ./apifox-cli run ./api-tests.json
+
     - name: Publish Test Report
       if: always()
       uses: actions/upload-artifact@v4
