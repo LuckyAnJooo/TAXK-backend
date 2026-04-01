@@ -148,4 +148,36 @@ public class StockPriceService {
         return results;
     }
 
+    // Get latest general market news
+    public List<Map<String, Object>> getNews() {
+        String url = String.format("https://finnhub.io/api/v1/news?category=general&token=%s", apiKey);
+        try {
+            List<Map<String, Object>> response = restTemplate.getForObject(url, List.class);
+            if (response != null) {
+                return response;
+            }
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+        return Collections.emptyList();
+    }
+
+    // Get company-specific news
+    public List<Map<String, Object>> getCompanyNews(String ticker, LocalDate startDate, LocalDate endDate) {
+        String url = String.format(
+                "https://finnhub.io/api/v1/company-news?symbol=%s&from=%s&to=%s&token=%s",
+                ticker, startDate.toString(), endDate.toString(), apiKey
+        );
+        try {
+            List<Map<String, Object>> response = restTemplate.getForObject(url, List.class);
+            if (response != null) {
+                return response;
+            }
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+        return Collections.emptyList();
+    }
+
+
 }
