@@ -1,9 +1,13 @@
 package com.example.TAXK.demo.service;
 
+import com.example.TAXK.demo.dto.NewsDto;
 import com.example.TAXK.demo.dto.QuoteData;
+import com.example.TAXK.demo.dto.StockSummaryDto;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -176,5 +180,58 @@ public class StockPriceService {
         }
         return results;
     }
+
+    // Get latest general market news
+    public List<NewsDto> getNews() {
+        String url = String.format("https://finnhub.io/api/v1/news?category=general&token=%s", apiKey);
+        try {
+            ResponseEntity<List<NewsDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<NewsDto>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    // Get company-specific news
+    public List<NewsDto> getCompanyNewsLatest(String ticker) {
+        String url = String.format("https://finnhub.io/api/v1/company-news?symbol=%s&token=%s", ticker, apiKey);
+        try {
+            ResponseEntity<List<NewsDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<NewsDto>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    public List<StockSummaryDto> getStockSummaries(List<String> tickers) {
+        List<StockSummaryDto> summaries = new ArrayList<>();
+        for (String ticker : tickers) {
+            Optional<QuoteData> quoteOpt = getQuote(ticker);
+            Optional<String> nameOpt = getCompanyName(ticker);
+
+            if (quoteOpt.isPresent()) {
+                QuoteData quote = quoteOpt.get();
+                String companyName = nameOpt.orElse("Unknown Company");
+                summaries.add(new StockSummaryDto(
+                        ticker,
+                        companyName,
+                        quote.getCurrentPrice(),
+                        quote.getPreviousClose()
+                ));
+            }
+        }
+        return summaries;
+    }
+
 
 }
