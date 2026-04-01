@@ -1,7 +1,11 @@
 package com.example.TAXK.demo.service;
 
+import com.example.TAXK.demo.dto.NewsDTO;
 import com.example.TAXK.demo.dto.QuoteData;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -149,35 +153,40 @@ public class StockPriceService {
     }
 
     // Get latest general market news
-    public List<Map<String, Object>> getNews() {
+    public List<NewsDTO> getNews() {
         String url = String.format("https://finnhub.io/api/v1/news?category=general&token=%s", apiKey);
         try {
-            List<Map<String, Object>> response = restTemplate.getForObject(url, List.class);
-            if (response != null) {
-                return response;
-            }
+            ResponseEntity<List<NewsDTO>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<NewsDTO>>() {}
+            );
+            return response.getBody();
         } catch (Exception e) {
             return Collections.emptyList();
         }
-        return Collections.emptyList();
     }
 
     // Get company-specific news
-    public List<Map<String, Object>> getCompanyNews(String ticker, LocalDate startDate, LocalDate endDate) {
+    public List<NewsDTO> getCompanyNews(String ticker, LocalDate startDate, LocalDate endDate) {
         String url = String.format(
                 "https://finnhub.io/api/v1/company-news?symbol=%s&from=%s&to=%s&token=%s",
                 ticker, startDate.toString(), endDate.toString(), apiKey
         );
         try {
-            List<Map<String, Object>> response = restTemplate.getForObject(url, List.class);
-            if (response != null) {
-                return response;
-            }
+            ResponseEntity<List<NewsDTO>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<NewsDTO>>() {}
+            );
+            return response.getBody();
         } catch (Exception e) {
             return Collections.emptyList();
         }
-        return Collections.emptyList();
     }
+
 
 
 }
