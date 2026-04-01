@@ -1,5 +1,6 @@
 package com.example.TAXK.demo.service;
 
+import com.example.TAXK.demo.dto.*;
 import com.example.TAXK.demo.entity.Holding;
 import com.example.TAXK.demo.entity.Transaction;
 import com.example.TAXK.demo.repo.HoldingRepo;
@@ -8,11 +9,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.*;
+import java.util.*;
 
 @Service
 public class PortfolioService {
@@ -100,6 +98,150 @@ public class PortfolioService {
         transactionRepo.save(tx);
         return true;
     }
+
+    // portfolio预览
+    public PortfolioResponse getPortfolioOverview() {
+        List<Holding> holdings = holdingRepo.findAll();
+
+        if (holdings.isEmpty()) {
+            PortfolioSummaryDto summary = new PortfolioSummaryDto();
+            return new PortfolioResponse(summary, Collections.emptyList());
+        }
+
+        // 批量获取实时报价（当前价 + 前收盘价）
+        List<String> tickers = holdings.stream().map(Holding::getTicker).toList();
+        Map<String, Optional<QuoteData>> quotes = stockPriceService.getAllQuotes(tickers);
+
+        // 计算每个 holding 的基础数据
+        List<HoldingDto> holdingDtos = new ArrayList<>();
+        double totalValue = 0;
+        double totalCost = 0;
+        double todayChange = 0;
+
+        for (Holding h : holdings) {
+            HoldingDto dto = new HoldingDto();
+            dto.setTicker(h.getTicker());
+            dto.setCompanyName(h.getCompany_name());
+            dto.setQuantity(h.getQuantity());
+            dto.setAverageCost(h.getAverage_cost());
+            dto.setCostBasis(h.getQuantity() * h.getAverage_cost());
+            dto.setFirstBuyDate(h.getFirst_buy_date() != null ? h.getFirst_buy_date().toString() : null);
+
+            Optional<QuoteData> quote = quotes.getOrDefault(h.getTicker(), Optional.empty());
+            if (quote.isPresent()) {
+                double currentPrice = quote.get().getCurrentPrice();
+                double previousClose = quote.get().getPreviousClose();
+                double marketValue = h.getQuantity() * currentPrice;
+                double pnl = marketValue - dto.getCostBasis();
+
+                dto.setCurrentPrice(currentPrice);
+                dto.setMarketValue(marketValue);
+                dto.setPnl(pnl);
+                dto.setReturnPercent(dto.getCostBasis() != 0 ? (pnl / dto.getCostBasis()) * 100 : 0);
+                dto.setDayChange(h.getQuantity() * (currentPrice - previousClose));
+                dto.setDayChangePercent(previousClose != 0 ? ((currentPrice - previousClose) / previousClose) * 100 : 0);
+
+                totalValue += marketValue;
+                todayChange += dto.getDayChange();
+            } else {
+                // API 失败：价格相关字段为 null
+                dto.setCurrentPrice(null);
+                dto.setMarketValue(null);
+                dto.setPnl(null);
+                dto.setReturnPercent(null);
+                dto.setDayChange(null);
+                dto.setDayChangePercent(null);
+            }
+
+            totalCost += dto.getCostBasis();
+            holdingDtos.add(dto);
+        }
+
+        // 计算 weight
+        for (HoldingDto dto : holdingDtos) {
+            if (dto.getMarketValue() != null && totalValue > 0) {
+                dto.setWeight((dto.getMarketValue() / totalValue) * 100);
+            }
+        }
+
+        // 汇总
+        PortfolioSummaryDto summary = new PortfolioSummaryDto();
+        summary.setTotalValue(totalValue);
+        summary.setTotalCost(totalCost);
+        summary.setTotalPnl(totalValue - totalCost);
+        summary.setTotalReturnPercent(totalCost != 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0);
+        summary.setTodayChange(todayChange);
+        double yesterdayValue = totalValue - todayChange;
+        summary.setTodayChangePercent(yesterdayValue != 0 ? (todayChange / yesterdayValue) * 100 : 0);
+
+        // best / worst performer
+        holdingDtos.stream()
+                .filter(d -> d.getReturnPercent() != null)
+                .max(Comparator.comparingDouble(HoldingDto::getReturnPercent))
+                .ifPresent(d -> summary.setBestPerformer(new PerformerDto(d.getTicker(), d.getReturnPercent())));
+
+        holdingDtos.stream()
+                .filter(d -> d.getReturnPercent() != null)
+                .min(Comparator.comparingDouble(HoldingDto::getReturnPercent))
+                .ifPresent(d -> summary.setWorstPerformer(new PerformerDto(d.getTicker(), d.getReturnPercent())));
+
+        return new PortfolioResponse(summary, holdingDtos);
+    }
+
+    // 折线图数据
+    public PerformanceResponse getPerformanceData() {
+        List<Holding> holdings = holdingRepo.findAll();
+
+        if (holdings.isEmpty()) {
+            return new PerformanceResponse(Collections.emptyList());
+        }
+
+        List<PerformanceSeriesDto> series = new ArrayList<>();
+
+        for (Holding h : holdings) {
+            LocalDate startDate = h.getFirst_buy_date() != null ? h.getFirst_buy_date() : LocalDate.now().minusYears(1);
+            List<Map<String, Object>> history = stockPriceService.getHistoricalPrice(h.getTicker(), startDate, "W");
+
+            List<PerformancePointDto> points = new ArrayList<>();
+            double averageCost = h.getAverage_cost();
+
+            for (Map<String, Object> record : history) {
+                long timestamp = ((Number) record.get("time")).longValue();
+                double close = ((Number) record.get("close")).doubleValue();
+                String date = Instant.ofEpochSecond(timestamp).atZone(ZoneOffset.UTC).toLocalDate().toString();
+                double returnPercent = averageCost != 0 ? ((close - averageCost) / averageCost) * 100 : 0;
+                points.add(new PerformancePointDto(date, returnPercent));
+            }
+
+            series.add(new PerformanceSeriesDto(h.getTicker(), points));
+        }
+
+        return new PerformanceResponse(series);
+    }
+
+    // 历史动向
+    public StockHistoryResponse getStockHistory(String ticker) {
+        Optional<Holding> existing = holdingRepo.findByTicker(ticker);
+        if (existing.isEmpty()) {
+            return null;
+        }
+
+        Holding holding = existing.get();
+        LocalDate startDate = LocalDate.now().minusYears(1);
+        List<Map<String, Object>> history = stockPriceService.getHistoricalPrice(ticker, startDate, "W");
+
+        List<StockHistoryPointDto> points = new ArrayList<>();
+        for (Map<String, Object> record : history) {
+            long timestamp = ((Number) record.get("time")).longValue();
+            double close = ((Number) record.get("close")).doubleValue();
+            String date = Instant.ofEpochSecond(timestamp).atZone(ZoneOffset.UTC).toLocalDate().toString();
+            points.add(new StockHistoryPointDto(date, close));
+        }
+
+        return new StockHistoryResponse(ticker, holding.getAverage_cost(), points);
+    }
+
+    // 卖
 
     @Transactional
     public boolean sell(String ticker, int quantity, String note) {

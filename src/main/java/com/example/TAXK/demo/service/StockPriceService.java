@@ -1,5 +1,6 @@
 package com.example.TAXK.demo.service;
 
+import com.example.TAXK.demo.dto.QuoteData;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -122,5 +123,29 @@ public class StockPriceService {
         return results;
     }
 
+    // Get full quote (current price + previous close) for a single stock
+    public Optional<QuoteData> getQuote(String ticker) {
+        String url = String.format("https://finnhub.io/api/v1/quote?symbol=%s&token=%s", ticker, apiKey);
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            if (response != null && response.get("c") != null && response.get("pc") != null) {
+                double currentPrice = Double.parseDouble(response.get("c").toString());
+                double previousClose = Double.parseDouble(response.get("pc").toString());
+                return Optional.of(new QuoteData(currentPrice, previousClose));
+            }
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+        return Optional.empty();
+    }
+
+    // Get full quotes for multiple stocks
+    public Map<String, Optional<QuoteData>> getAllQuotes(List<String> tickers) {
+        Map<String, Optional<QuoteData>> results = new HashMap<>();
+        for (String ticker : tickers) {
+            results.put(ticker, getQuote(ticker));
+        }
+        return results;
+    }
 
 }
