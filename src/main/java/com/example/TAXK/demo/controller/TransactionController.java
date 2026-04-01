@@ -22,6 +22,7 @@ import java.util.Optional;
 @CrossOrigin
 public class TransactionController {
 
+    @Autowired
     private final PortfolioService portfolioService;
 
     public TransactionController (PortfolioService portfolioService) {
@@ -41,6 +42,7 @@ public class TransactionController {
         System.out.println(transactionRequest.getTicker() + " " + transactionRequest.getQuantity());
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
+    
 
 
 
