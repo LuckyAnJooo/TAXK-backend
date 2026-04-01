@@ -296,5 +296,8 @@ public class PortfolioService {
         return true;
     }
 
+    public List<Transaction> getTransactionsByTicker(String ticker) {
+        return transactionRepo.findByTickerOrderByTradeDateDesc(ticker);
+    }
 
 }

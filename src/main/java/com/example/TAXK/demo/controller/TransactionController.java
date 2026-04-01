@@ -43,6 +43,14 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
     
+    @GetMapping("/api/transaction/{ticker}")
+    public ResponseEntity<List<Transaction>> getTransactionsByTicker(@PathVariable String ticker) {
+        List<Transaction> transactions = portfolioService.getTransactionsByTicker(ticker);
+        if (transactions.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(transactions);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(transactions);
+    }
 
 
 
