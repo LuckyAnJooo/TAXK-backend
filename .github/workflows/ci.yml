@@ -2,9 +2,9 @@ name: Java CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main","CICD/kara"]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main","CICD/kara"]
 
 jobs:
   build-and-test:
