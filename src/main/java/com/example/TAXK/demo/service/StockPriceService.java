@@ -199,19 +199,29 @@ public class StockPriceService {
 
     // Get company-specific news
     public List<NewsDto> getCompanyNewsLatest(String ticker) {
-        String url = String.format("https://finnhub.io/api/v1/company-news?symbol=%s&token=%s", ticker, apiKey);
+        String url = String.format(
+            "https://finnhub.io/api/v1/company-news?symbol=%s&from=%s&to=%s&token=%s",
+            ticker,
+            LocalDate.now().minusDays(7), // news in one week
+            LocalDate.now(),              
+            apiKey
+        );
+
         try {
             ResponseEntity<List<NewsDto>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    null,
-                    new ParameterizedTypeReference<List<NewsDto>>() {}
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<NewsDto>>() {}
             );
-            return response.getBody();
+
+            return response.getBody() != null ? response.getBody() : Collections.emptyList();
         } catch (Exception e) {
+            e.printStackTrace();
             return Collections.emptyList();
         }
     }
+
 
     public List<StockSummaryDto> getStockSummaries(List<String> tickers) {
         List<StockSummaryDto> summaries = new ArrayList<>();
