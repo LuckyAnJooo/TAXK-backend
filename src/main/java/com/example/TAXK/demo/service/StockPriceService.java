@@ -2,6 +2,8 @@ package com.example.TAXK.demo.service;
 
 import com.example.TAXK.demo.dto.NewsDto;
 import com.example.TAXK.demo.dto.QuoteData;
+import com.example.TAXK.demo.dto.StockSummaryDto;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -184,6 +186,25 @@ public class StockPriceService {
         }
     }
 
+    public List<StockSummaryDto> getStockSummaries(List<String> tickers) {
+        List<StockSummaryDto> summaries = new ArrayList<>();
+        for (String ticker : tickers) {
+            Optional<QuoteData> quoteOpt = getQuote(ticker);
+            Optional<String> nameOpt = getCompanyName(ticker);
+
+            if (quoteOpt.isPresent()) {
+                QuoteData quote = quoteOpt.get();
+                String companyName = nameOpt.orElse("Unknown Company");
+                summaries.add(new StockSummaryDto(
+                        ticker,
+                        companyName,
+                        quote.getCurrentPrice(),
+                        quote.getPreviousClose()
+                ));
+            }
+        }
+        return summaries;
+    }
 
 
 }

@@ -22,6 +22,7 @@ import java.util.Optional;
 @CrossOrigin
 public class TransactionController {
 
+    @Autowired
     private final PortfolioService portfolioService;
 
     public TransactionController (PortfolioService portfolioService) {
@@ -40,6 +41,15 @@ public class TransactionController {
         portfolioService.sell(transactionRequest.getTicker(), transactionRequest.getQuantity(), transactionRequest.getNote());
         System.out.println(transactionRequest.getTicker() + " " + transactionRequest.getQuantity());
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
+    }
+    
+    @GetMapping("/api/transaction/{ticker}")
+    public ResponseEntity<List<Transaction>> getTransactionsByTicker(@PathVariable String ticker) {
+        List<Transaction> transactions = portfolioService.getTransactionsByTicker(ticker);
+        if (transactions.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(transactions);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(transactions);
     }
 
 
