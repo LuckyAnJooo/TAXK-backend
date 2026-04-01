@@ -1,6 +1,6 @@
 package com.example.TAXK.demo.dto;
 
-public class NewsDTO {
+public class NewsDto {
     private String category;
     private long datetime;   // timeline (second)
     private String headline;

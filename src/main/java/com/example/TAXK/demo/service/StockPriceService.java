@@ -1,6 +1,6 @@
 package com.example.TAXK.demo.service;
 
-import com.example.TAXK.demo.dto.NewsDTO;
+import com.example.TAXK.demo.dto.NewsDto;
 import com.example.TAXK.demo.dto.QuoteData;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -153,14 +153,14 @@ public class StockPriceService {
     }
 
     // Get latest general market news
-    public List<NewsDTO> getNews() {
+    public List<NewsDto> getNews() {
         String url = String.format("https://finnhub.io/api/v1/news?category=general&token=%s", apiKey);
         try {
-            ResponseEntity<List<NewsDTO>> response = restTemplate.exchange(
+            ResponseEntity<List<NewsDto>> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     null,
-                    new ParameterizedTypeReference<List<NewsDTO>>() {}
+                    new ParameterizedTypeReference<List<NewsDto>>() {}
             );
             return response.getBody();
         } catch (Exception e) {
@@ -169,17 +169,14 @@ public class StockPriceService {
     }
 
     // Get company-specific news
-    public List<NewsDTO> getCompanyNews(String ticker, LocalDate startDate, LocalDate endDate) {
-        String url = String.format(
-                "https://finnhub.io/api/v1/company-news?symbol=%s&from=%s&to=%s&token=%s",
-                ticker, startDate.toString(), endDate.toString(), apiKey
-        );
+    public List<NewsDto> getCompanyNewsLatest(String ticker) {
+        String url = String.format("https://finnhub.io/api/v1/company-news?symbol=%s&token=%s", ticker, apiKey);
         try {
-            ResponseEntity<List<NewsDTO>> response = restTemplate.exchange(
+            ResponseEntity<List<NewsDto>> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     null,
-                    new ParameterizedTypeReference<List<NewsDTO>>() {}
+                    new ParameterizedTypeReference<List<NewsDto>>() {}
             );
             return response.getBody();
         } catch (Exception e) {
