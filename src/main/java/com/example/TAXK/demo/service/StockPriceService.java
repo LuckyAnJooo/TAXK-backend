@@ -5,6 +5,8 @@ import com.example.TAXK.demo.dto.QuoteData;
 import com.example.TAXK.demo.dto.StockSummaryDto;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -45,35 +47,60 @@ public class StockPriceService {
         return results;
     }
 
-    // Get historical price of one single stock
+    // Get historical price of one single stock (via Yahoo Finance)
     public List<Map<String, Object>> getHistoricalPrice(String ticker, LocalDate startDate, String resolution) {
-        // resolution can be "1", "5", "15", "30", "60", "D", "W", "M"
+        // Map Finnhub resolution codes to Yahoo Finance interval strings
+        String interval = switch (resolution) {
+            case "W" -> "1wk";
+            case "M" -> "1mo";
+            case "D" -> "1d";
+            default  -> "1d";
+        };
+
         long from = startDate.atStartOfDay().toEpochSecond(java.time.ZoneOffset.UTC);
-        long to = LocalDate.now().atStartOfDay().toEpochSecond(java.time.ZoneOffset.UTC);
+        long to   = LocalDate.now().atStartOfDay().toEpochSecond(java.time.ZoneOffset.UTC);
 
         String url = String.format(
-                "https://finnhub.io/api/v1/stock/candle?symbol=%s&resolution=%s&from=%d&to=%d&token=%s",
-                ticker, resolution, from, to, apiKey
+                "https://query1.finance.yahoo.com/v8/finance/chart/%s?interval=%s&period1=%d&period2=%d",
+                ticker, interval, from, to
         );
 
+        // Yahoo Finance blocks requests without a browser-like User-Agent
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
         try {
-            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
-            if (response != null && "ok".equals(response.get("s"))) {
-                List<Map<String, Object>> history = new ArrayList<>();
-                List<Long> timestamps = (List<Long>) response.get("t");
-                List<Double> closes = (List<Double>) response.get("c");
-                for (int i = 0; i < timestamps.size(); i++) {
-                    Map<String, Object> record = new HashMap<>();
-                    record.put("time", timestamps.get(i));
-                    record.put("close", closes.get(i));
-                    history.add(record);
-                }
-                return history;
+            ResponseEntity<Map> responseEntity = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+            Map<String, Object> body = responseEntity.getBody();
+            if (body == null) return Collections.emptyList();
+
+            Map<String, Object> chart = (Map<String, Object>) body.get("chart");
+            List<Map<String, Object>> results = (List<Map<String, Object>>) chart.get("result");
+            if (results == null || results.isEmpty()) return Collections.emptyList();
+
+            Map<String, Object> first = results.get(0);
+            List<Number> timestamps = (List<Number>) first.get("timestamp");
+
+            Map<String, Object> indicators = (Map<String, Object>) first.get("indicators");
+            List<Map<String, Object>> quoteList = (List<Map<String, Object>>) indicators.get("quote");
+            List<Number> closes = (List<Number>) quoteList.get(0).get("close");
+
+            if (timestamps == null || closes == null) return Collections.emptyList();
+
+            List<Map<String, Object>> history = new ArrayList<>();
+            for (int i = 0; i < timestamps.size(); i++) {
+                Number closeVal = closes.get(i);
+                if (closeVal == null) continue; // skip gaps (holidays, etc.)
+                Map<String, Object> record = new HashMap<>();
+                record.put("time", timestamps.get(i).longValue());
+                record.put("close", closeVal.doubleValue());
+                history.add(record);
             }
+            return history;
         } catch (Exception e) {
             return Collections.emptyList();
         }
-        return Collections.emptyList();
     }
 
     // Get historical price of all stocks
