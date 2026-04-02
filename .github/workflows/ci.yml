@@ -4,7 +4,6 @@ on:
   push:
     branches: [ "main","CI/API/Test/kara"]
 
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -24,10 +23,10 @@ jobs:
           --health-retries=3
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -40,7 +39,6 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: root
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
 
-
       - name: Start Spring Boot app
         run: java -jar target/*.jar &
         env:
@@ -49,16 +47,31 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: root
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
 
-      - name: Wait for app to start
-        run: sleep 15
+      - name: Wait for app to start (health check)
+        run: |
+          for i in {1..20}; do
+            if curl -s http://localhost:8080/actuator/health | grep -q 'UP'; then
+              echo "✅ App started successfully!"
+              exit 0
+            fi
+            echo "⏳ Waiting for app to start... ($i/20)"
+            sleep 3
+          done
+          echo "❌ App failed to start after 60s"
+          exit 1
 
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v2
+      - name: Setup Node.js 20 (LTS)
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '20'
 
-      - name: Install Apifox CLI
-        run: npm install -g apifox-cli
+      - name: Install/Upgrade Apifox CLI to latest
+        run: npm install -g apifox-cli@latest --unsafe-perm
+
+      - name: Verify Apifox CLI version and --variable support
+        run: |
+          apifox --version
+          apifox run --help | grep -i variable
 
       - name: Running Test Scenario
         env:
