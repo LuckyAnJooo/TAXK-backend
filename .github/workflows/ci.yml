@@ -52,10 +52,13 @@ jobs:
       - name: Wait for app to start
         run: sleep 15
 
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
       - name: Install Apifox CLI
         run: npm install -g apifox-cli
 
-      - name: Run Apifox Tests
-        run: apifox run ${{ secrets.APIFOX_COLLECTION_ID }} \
-          -t ${{ secrets.APIFOX_API_TOKEN }} \
-          --variable "baseUrl=http://localhost:8080"
+      - name: Running Test Scenario
+        run: apifox run --access-token $APIFOX_API_TOKEN -t 8107676 -e 43830747 -n 1 -r html,cli
