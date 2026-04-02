@@ -2,9 +2,8 @@ name: Java CI
 
 on:
   push:
-    branches: [ "main","CICD/kara"]
-  pull_request:
-    branches: [ "main","CICD/kara"]
+    branches: [ "main","CI/API/Test/kara"]
+
 
 jobs:
   build-and-test:
