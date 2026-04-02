@@ -85,7 +85,7 @@ jobs:
       - name: Running Test Scenario
         env:
           APIFOX_ACCESS_TOKEN: ${{ secrets.APIFOX_ACCESS_TOKEN }}
-        run: apifox run --access-token "$APIFOX_ACCESS_TOKEN" -t 8107676 -e 43830747 -n 1 -r html,cli --variable "baseUrl=http://localhost:8080"
+        run: apifox run --access-token "$APIFOX_ACCESS_TOKEN" -t 8107676 -e 43830747 -n 1 -r html,cli --env-var "baseUrl=http://localhost:8080"
         shell: bash
 
       - name: Print full app logs after test
