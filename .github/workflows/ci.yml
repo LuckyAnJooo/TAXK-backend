@@ -73,12 +73,6 @@ jobs:
           exit 1
         shell: bash
 
-      - name: Setup Node.js 20 (LTS)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
       - name: Install/Reinstall Apifox CLI to latest
         run: |
           npm uninstall -g apifox-cli || true
