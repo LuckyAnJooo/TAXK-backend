@@ -38,13 +38,11 @@ jobs:
     - name: Wait for backend to start
       run: sleep 15
 
-    - name: Download Apifox CLI
-      run: |
-        curl -fsSL https://cli.apifox.com/download/latest/linux_x64 -o apifox-cli
-        chmod +x apifox-cli
+    - name: Install Newman
+      run: npm install -g newman
 
-    - name: Run API Fox tests
-      run: ./apifox-cli run ./api-tests.json
+    - name: Run API tests with Newman
+      run: newman run ./api-tests.json
 
     - name: Publish Test Report
       if: always()
