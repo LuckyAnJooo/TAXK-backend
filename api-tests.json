@@ -1,0 +1,207 @@
+{
+    "info": {
+        "name": "Taxk",
+        "description": "",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "sell",
+            "description": "",
+            "event": [],
+            "auth": {},
+            "request": {
+                "auth": {},
+                "method": "GET",
+                "body": {
+                    "mode": "raw",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/transaction/TSLA",
+                    "path": [
+                        "api",
+                        "transaction",
+                        "TSLA"
+                    ],
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        },
+        {
+            "name": "'buy' API test",
+            "description": "",
+            "event": [],
+            "auth": {},
+            "request": {
+                "auth": {},
+                "method": "POST",
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"ticker\": \"AAPL\",\n    \"quantity\": 10,\n    \"note\": \"长期持有\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/portfolio/buy",
+                    "path": [
+                        "api",
+                        "portfolio",
+                        "buy"
+                    ],
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        },
+        {
+            "name": "/api/portfolio",
+            "description": "",
+            "event": [],
+            "auth": {},
+            "request": {
+                "auth": {},
+                "method": "GET",
+                "body": {},
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/portfolio",
+                    "path": [
+                        "api",
+                        "portfolio"
+                    ],
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        },
+        {
+            "name": "/api/portfolio/performance",
+            "description": "",
+            "event": [],
+            "auth": {},
+            "request": {
+                "auth": {},
+                "method": "GET",
+                "body": {},
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/portfolio/performance",
+                    "path": [
+                        "api",
+                        "portfolio",
+                        "performance"
+                    ],
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        },
+        {
+            "name": "/api/recommendation/information",
+            "description": "",
+            "event": [],
+            "auth": {},
+            "request": {
+                "auth": {},
+                "method": "GET",
+                "body": {},
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/recommendation/information",
+                    "path": [
+                        "api",
+                        "recommendation",
+                        "information"
+                    ],
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        },
+        {
+            "name": "/api/portfolio/AAPL/news",
+            "description": "",
+            "event": [],
+            "auth": {},
+            "request": {
+                "auth": {},
+                "method": "GET",
+                "body": {},
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/portfolio/AAPL/news",
+                    "path": [
+                        "api",
+                        "portfolio",
+                        "AAPL",
+                        "news"
+                    ],
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        }
+    ],
+    "variable": [],
+    "event": [],
+    "auth": {}
+}

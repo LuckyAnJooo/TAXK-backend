@@ -2,39 +2,96 @@ name: Java CI
 
 on:
   push:
-    branches: [ "main","CICD/kara"]
-  pull_request:
-    branches: [ "main","CICD/kara"]
+    branches: [ "main","CI/API/Test/kara"]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: taxk
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-    - name: Cache Maven packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+      - name: Build Spring Boot app
+        run: ./mvnw package -DskipTests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/taxk?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
 
-    - name: Build with Maven
-      run: mvn clean install -DskipTests
+      - name: Start Spring Boot app (with log capture)
+        run: |
+          nohup java -jar target/*.jar > app-start.log 2>&1 &
+          echo $! > app.pid
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/taxk?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
 
-    - name: Publish Test Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: target/surefire-reports/
+      - name: Print initial startup logs
+        run: cat app-start.log
+        if: always()
+
+      - name: Wait for app to start (port check)
+        run: |
+          echo "Checking port 8080 status..."
+          lsof -i :8080 || echo "Port 8080 is free"
+          echo "Waiting for app to listen on port 8080..."
+          for i in {1..30}; do
+            if nc -zv localhost 8080; then
+              echo "✅ App is listening on port 8080, waiting 5s for full initialization..."
+              sleep 5
+              exit 0
+            fi
+            echo "⏳ Waiting for app to start... ($i/30)"
+            sleep 2
+          done
+          echo "❌ App failed to start after 60s, printing full startup logs:"
+          cat app-start.log
+          exit 1
+        shell: bash
+
+      - name: Install/Reinstall Apifox CLI to latest
+        run: |
+          npm uninstall -g apifox-cli || true
+          npm cache clean --force
+          npm install -g apifox-cli@latest --unsafe-perm=true --allow-root
+          apifox --version
+          apifox run --help | grep -i variable
+        shell: bash
+
+      - name: Running Test Scenario
+        env:
+          APIFOX_ACCESS_TOKEN: ${{ secrets.APIFOX_ACCESS_TOKEN }}
+        run: apifox run --access-token "$APIFOX_ACCESS_TOKEN" -t 8107676 -e 43830747 -n 1 -r html,cli --env-var "baseUrl=http://localhost:8080"
+        shell: bash
+
+      - name: Print full app logs after test
+        run: cat app-start.log
+        if: always()
+
+      - name: Kill Spring Boot app
+        run: kill $(cat app.pid) || true
+        if: always()
