@@ -61,4 +61,6 @@ jobs:
         run: npm install -g apifox-cli
 
       - name: Running Test Scenario
-        run: apifox run --access-token $APIFOX_API_TOKEN -t 8107676 -e 43830747 -n 1 -r html,cli --variable "baseUrl=http://localhost:8080"
+        env:
+          APIFOX_ACCESS_TOKEN: ${{ secrets.APIFOX_ACCESS_TOKEN }}
+        run: apifox run --access-token "$APIFOX_ACCESS_TOKEN" -t 8107676 -e 43830747 -n 1 -r html,cli --variable "baseUrl=http://localhost:8080"
