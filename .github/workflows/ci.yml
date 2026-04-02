@@ -6,46 +6,56 @@ on:
 
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: taxk
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Cache Maven packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+      - name: Build Spring Boot app
+        run: ./mvnw package -DskipTests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/taxk
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
 
-    - name: Build with Maven
-      run: mvn clean install -DskipTests
 
-    - name: Start backend (in background)
-      run: mvn spring-boot:run &
+      - name: Start Spring Boot app
+        run: java -jar target/*.jar &
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/taxk
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
 
-    - name: Wait for backend to start
-      run: sleep 15
+      - name: Wait for app to start
+        run: sleep 15
 
-    - name: Install Newman
-      run: npm install -g newman
+      - name: Install Apifox CLI
+        run: npm install -g apifox-cli
 
-    - name: Run API tests with Newman
-      run: newman run ./api-tests.json
-
-    - name: Publish Test Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: target/surefire-reports/
+      - name: Run Apifox Tests
+        run: apifox run ${{ secrets.APIFOX_COLLECTION_ID }} \
+          -t ${{ secrets.APIFOX_API_TOKEN }} \
+          --variable "baseUrl=http://localhost:8080"
