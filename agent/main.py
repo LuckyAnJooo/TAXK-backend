@@ -73,8 +73,9 @@ NEWS_TOOL = {
     }
 }
 
-ANALYSIS_TOOLS = [PORTFOLIO_TOOL, HISTORY_TOOL]
-RECOMMEND_TOOLS = [PORTFOLIO_TOOL, HISTORY_TOOL, NEWS_TOOL]
+# ANALYSIS_TOOLS = [PORTFOLIO_TOOL, HISTORY_TOOL]
+# RECOMMEND_TOOLS = [PORTFOLIO_TOOL, HISTORY_TOOL, NEWS_TOOL]
+TOOLS = [PORTFOLIO_TOOL, HISTORY_TOOL, NEWS_TOOL]
 
 
 # --- Tool execution ---
@@ -158,7 +159,7 @@ async def chat(request: ChatRequest):
             {"role": "system", "content": FINANCE_SYSTEM},
             {"role": "user", "content": request.message},
         ]
-        reply = run_agent(messages, ANALYSIS_TOOLS)
+        reply = run_agent(messages, TOOLS)
         return {"response": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -192,7 +193,7 @@ async def recommend():
                 ),
             },
         ]
-        raw = run_agent(messages, RECOMMEND_TOOLS, response_format={"type": "json_object"})
+        raw = run_agent(messages, TOOLS, response_format={"type": "json_object"})
         result = json.loads(raw)
         return result
     except Exception as e:
