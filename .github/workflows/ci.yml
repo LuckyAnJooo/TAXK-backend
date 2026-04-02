@@ -34,30 +34,42 @@ jobs:
       - name: Build Spring Boot app
         run: ./mvnw package -DskipTests
         env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/taxk
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/taxk?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: root
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
 
-      - name: Start Spring Boot app
-        run: java -jar target/*.jar &
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/taxk
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
-          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
-
-      - name: Wait for app to start (health check)
+      - name: Start Spring Boot app (with log capture)
         run: |
-          for i in {1..20}; do
-            if curl -s http://localhost:8080/actuator/health | grep -q 'UP'; then
-              echo "✅ App started successfully!"
+          nohup java -jar target/*.jar > app-start.log 2>&1 &
+          echo $! > app.pid
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/taxk?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+
+      # 新增：打印启动日志，排查问题
+      - name: Print initial startup logs
+        run: cat app-start.log
+        if: always()
+
+      - name: Wait for app to start (port check)
+        run: |
+          echo "Checking port 8080 status..."
+          lsof -i :8080 || echo "Port 8080 is free"
+          echo "Waiting for app to listen on port 8080..."
+          for i in {1..30}; do
+            if nc -zv localhost 8080; then
+              echo "✅ App is listening on port 8080, waiting 5s for full initialization..."
+              sleep 5
               exit 0
             fi
-            echo "⏳ Waiting for app to start... ($i/20)"
-            sleep 3
+            echo "⏳ Waiting for app to start... ($i/30)"
+            sleep 2
           done
-          echo "❌ App failed to start after 60s"
+          echo "❌ App failed to start after 60s, printing full startup logs:"
+          cat app-start.log
           exit 1
 
       - name: Setup Node.js 20 (LTS)
@@ -77,3 +89,13 @@ jobs:
         env:
           APIFOX_ACCESS_TOKEN: ${{ secrets.APIFOX_ACCESS_TOKEN }}
         run: apifox run --access-token "$APIFOX_ACCESS_TOKEN" -t 8107676 -e 43830747 -n 1 -r html,cli --variable "baseUrl=http://localhost:8080"
+
+      # 新增：测试结束后打印完整日志，排查问题
+      - name: Print full app logs after test
+        run: cat app-start.log
+        if: always()
+
+      # 新增：测试结束后杀死应用进程
+      - name: Kill Spring Boot app
+        run: kill $(cat app.pid) || true
+        if: always()
