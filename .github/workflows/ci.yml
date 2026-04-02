@@ -30,6 +30,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'
 
       - name: Build Spring Boot app
         run: ./mvnw package -DskipTests
@@ -49,7 +50,6 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: root
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
 
-      # 新增：打印启动日志，排查问题
       - name: Print initial startup logs
         run: cat app-start.log
         if: always()
@@ -71,31 +71,33 @@ jobs:
           echo "❌ App failed to start after 60s, printing full startup logs:"
           cat app-start.log
           exit 1
+        shell: bash
 
       - name: Setup Node.js 20 (LTS)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Install/Upgrade Apifox CLI to latest
-        run: npm install -g apifox-cli@latest --unsafe-perm
-
-      - name: Verify Apifox CLI version and --variable support
+      - name: Install/Reinstall Apifox CLI to latest
         run: |
+          npm uninstall -g apifox-cli || true
+          npm cache clean --force
+          npm install -g apifox-cli@latest --unsafe-perm=true --allow-root
           apifox --version
           apifox run --help | grep -i variable
+        shell: bash
 
       - name: Running Test Scenario
         env:
           APIFOX_ACCESS_TOKEN: ${{ secrets.APIFOX_ACCESS_TOKEN }}
         run: apifox run --access-token "$APIFOX_ACCESS_TOKEN" -t 8107676 -e 43830747 -n 1 -r html,cli --variable "baseUrl=http://localhost:8080"
+        shell: bash
 
-      # 新增：测试结束后打印完整日志，排查问题
       - name: Print full app logs after test
         run: cat app-start.log
         if: always()
 
-      # 新增：测试结束后杀死应用进程
       - name: Kill Spring Boot app
         run: kill $(cat app.pid) || true
         if: always()
