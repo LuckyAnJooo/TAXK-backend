@@ -29,19 +29,23 @@ public class TransactionController {
         this.portfolioService = portfolioService;
     }
 
-//    @GetMapping("api/holding")
-//    public ResponseEntity<List<Holding>> getHolding(){
-//        List<Holding> holds = holdsRepo.findAll();
-//        System.out.println(holds);
-//        return ResponseEntity.status(HttpStatus.OK).body(holds);  // 正确返回数据
-//    }
 
-    @PostMapping("/api/portfolio/sell")
-    public ResponseEntity<Void> addHolding(@RequestBody TransactionRequest transactionRequest){
-        portfolioService.sell(transactionRequest.getTicker(), transactionRequest.getQuantity(), transactionRequest.getNote());
-        System.out.println(transactionRequest.getTicker() + " " + transactionRequest.getQuantity());
-        return ResponseEntity.status(HttpStatus.CREATED).body(null);
+
+//    @PostMapping("/api/portfolio/sell")
+//    public ResponseEntity<Void> addHolding(@RequestBody TransactionRequest transactionRequest){
+//        portfolioService.sell(transactionRequest.getTicker(), transactionRequest.getQuantity(), transactionRequest.getNote());
+//        System.out.println(transactionRequest.getTicker() + " " + transactionRequest.getQuantity());
+//        return ResponseEntity.status(HttpStatus.CREATED).body(null);
+//    }
+// practice Kara
+
+    @PostMapping ("/api/portfolio/sell")
+    public ResponseEntity<Void> deleteHolding (@RequestBody TransactionRequest transactionRequest){
+        portfolioService.sell(transactionRequest.getTicker(),transactionRequest.getQuantity(),transactionRequest.getNote());
+        return ResponseEntity.status(HttpStatus.CREATED).body(null); // always ResponsEntity.status
     }
+
+
     
 //    @GetMapping("/api/transaction/{ticker}") // 1. URL + HTTP Method
 //    public ResponseEntity<List<Transaction>> getTransactionsByTicker (@PathVariable String ticker) { // 2.Return Type+3.Method Name+4.Input
@@ -52,6 +56,7 @@ public class TransactionController {
 //        return ResponseEntity.status(HttpStatus.OK).body(transactions); //7. Return Response
 //    }
 
+// practice Kara
     @GetMapping("/api/transaction/{ticker}")
     public ResponseEntity<List<Transaction>> getTransactionsByTicker (@PathVariable String ticker){
         List<Transaction> transactions = portfolioService.getTransactionsByTicker(ticker);
