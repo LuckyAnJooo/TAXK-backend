@@ -1,3 +1,5 @@
+// Done
+
 package com.example.TAXK.demo.controller;
 
 import com.example.TAXK.demo.service.PortfolioService;
@@ -20,23 +22,18 @@ public class HoldingController {
         this.portfolioService = portfolioService;
     }
 
-//    @GetMapping("api/holding")
-//    public ResponseEntity<List<Holding>> getHolding(){
-//        List<Holding> holds = holdsRepo.findAll();
-//        System.out.println(holds);
-//        return ResponseEntity.status(HttpStatus.OK).body(holds);  // 正确返回数据
-//    }
 
+//    @PostMapping("/api/portfolio/buy")
+//    public ResponseEntity<Void> addHolding(@RequestBody TransactionRequest transactionRequest){
+//        portfolioService.buy(transactionRequest.getTicker(), transactionRequest.getQuantity(), transactionRequest.getNote());
+//        System.out.println(transactionRequest.getTicker() + " " + transactionRequest.getQuantity());
+//        return ResponseEntity.status(HttpStatus.CREATED).body(null);
+//    }
+    // practice Kara
     @PostMapping("/api/portfolio/buy")
-    public ResponseEntity<Void> addHolding(@RequestBody TransactionRequest transactionRequest){
-        portfolioService.buy(transactionRequest.getTicker(), transactionRequest.getQuantity(), transactionRequest.getNote());
-        System.out.println(transactionRequest.getTicker() + " " + transactionRequest.getQuantity());
+    public ResponseEntity<Void> addholdings (@RequestBody TransactionRequest transactionRequest){
+        portfolioService.buy(transactionRequest.getTicker(),transactionRequest.getQuantity(),transactionRequest.getNote());
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
-
-
-
-
-
 
 }
